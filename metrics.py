@@ -31,7 +31,7 @@ def stochastics(dataframe, low, high, close, k, d):
 
     # Fast Stochastic
     df['k_fast'] = 100 * (df[close] - low_min) / (high_max - low_min)
-    df['k_fast'].ffill(inplace=True)
+    df['k_fast'] = df['k_fast'].ffill()
     df['d_fast'] = df['k_fast'].rolling(window=d).mean()
 
     # Slow Stochastic

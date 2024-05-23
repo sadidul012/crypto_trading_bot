@@ -4,9 +4,10 @@ from config import settings
 client = Client(settings.API_KEY, settings.SECRET_KEY, testnet=True)
 
 symbol = 'TRXUSDT'
-klines = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1HOUR, "1 month ago UTC")
+klines = client.get_historical_klines(symbol, Client.KLINE_INTERVAL_1DAY, "2024-01-1", "2024-02-1")
 columns = ["Time", "Open", "High", "Low", "Close", "Volume", "Close time", "Volume", "Trades", "TBBAV", "TBQAV", "Ignore"]
 df = pd.DataFrame(klines, columns=columns)
+df["Date"] = pd.to_datetime(df["Time"], unit="ms")
 df.to_csv(f"data/current/{symbol}.csv", index=False)
 
 # get market depth
