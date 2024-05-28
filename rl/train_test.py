@@ -44,7 +44,7 @@ def main():
     )
     if str(dqn_agent.device) == "cpu":
         warnings.warn(
-            "Device is set to CPU. This will lead to a very slow training. Consider to run pretained models by"
+            "Device is set to CPU. This will lead to a very slow training. Consider to run pretained rl by"
             "executing main.py script instead of train_test.py!")
 
     double_dqn_agent = Agent(

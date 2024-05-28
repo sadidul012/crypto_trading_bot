@@ -1,7 +1,7 @@
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from models import ConvDQN, ConvDuelingDQN
+from rl import ConvDQN, ConvDuelingDQN
 from utils import ReplayMemory
 from utils import Transition
 import random
@@ -33,7 +33,7 @@ class Agent:
 
         INPUT_DIM (:obj:`int`): input dimentionality withut considering batch size.
 
-        HIDDEN_DIM (:obj:`int`): hidden layer dimentionality (for Linear models only)
+        HIDDEN_DIM (:obj:`int`): hidden layer dimentionality (for Linear rl only)
 
         ACTION_NUMBER (:obj:`int`): dimentionality of output layer of the Q network
 
@@ -288,14 +288,14 @@ class Agent:
         if self.DOUBLE:
             model_name = env.reward_f + '_reward_double_' + self.MODEL + '_model'
             count = 0
-            while os.path.exists(path + model_name):  # avoid overrinding models
+            while os.path.exists(path + model_name):  # avoid overrinding rl
                 count += 1
                 model_name = model_name + "_" + str(count)
 
         else:
             model_name = env.reward_f + '_reward_' + self.MODEL + '_model'
             count = 0
-            while os.path.exists(path + model_name):  # avoid overrinding models
+            while os.path.exists(path + model_name):  # avoid overrinding rl
                 count += 1
                 model_name = model_name + "_" + str(count)
 
