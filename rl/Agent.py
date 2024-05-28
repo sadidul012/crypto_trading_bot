@@ -45,19 +45,20 @@ class Agent:
     """
 
     def __init__(self,
-                 REPLAY_MEM_SIZE=10000,
-                 BATCH_SIZE=40,
-                 GAMMA=0.98,
-                 EPS_START=1,
-                 EPS_END=0.12,
-                 EPS_STEPS=300,
-                 LEARNING_RATE=0.001,
-                 INPUT_DIM=24,
-                 HIDDEN_DIM=120,
-                 ACTION_NUMBER=3,
-                 TARGET_UPDATE=10,
-                 MODEL='ddqn',
-                 DOUBLE=True):
+             REPLAY_MEM_SIZE=10000,
+             BATCH_SIZE=40,
+             GAMMA=0.98,
+             EPS_START=1,
+             EPS_END=0.12,
+             EPS_STEPS=300,
+             LEARNING_RATE=0.001,
+             INPUT_DIM=24,
+             HIDDEN_DIM=120,
+             ACTION_NUMBER=3,
+             TARGET_UPDATE=10,
+             MODEL='ddqn',
+             DOUBLE=True
+        ):
 
         self.REPLAY_MEM_SIZE = REPLAY_MEM_SIZE
         self.BATCH_SIZE = BATCH_SIZE
@@ -307,7 +308,6 @@ class Agent:
         self.TRAINING = False
         cumulative_reward = [0 for t in range(len(env_test.data))]
         reward_list = [0 for t in range(len(env_test.data))]
-
         if model_name is None:
             pass
         elif path is not None:
@@ -343,7 +343,6 @@ class Agent:
             # Observe new state: it will be None if env.done = True. It is the next
             # state since env.step() has been called two rows above.
             next_state = env_test.get_state()
-
             # Move to the next state
             state = next_state
 

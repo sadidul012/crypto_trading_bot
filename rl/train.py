@@ -23,7 +23,6 @@ def main():
     HIDDEN_DIM = 120
     ACTION_NUMBER = 3
     TARGET_UPDATE = 10
-    N_TEST = 1
     TRADING_PERIOD = 4000
     index = random.randrange(len(df) - TRADING_PERIOD - 1)
     dqn_agent = Agent(
@@ -52,7 +51,7 @@ def main():
     model_path = path + "rl_models/"
     if not os.path.exists(model_path):
         os.makedirs(path, exist_ok=True)
-    cr_profit_dqn = dqn_agent.train(profit_train_env, model_path, num_episodes=2)
+    cr_profit_dqn = dqn_agent.train(profit_train_env, model_path, num_episodes=40)
     profit_train_env.reset()
 
 

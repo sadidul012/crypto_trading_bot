@@ -105,8 +105,7 @@ class Environment:
             if len(self.agent_positions) < 1:
                 sell_nothing = True
             for position in self.agent_positions:
-                profits += (self.data.iloc[self.t, :][
-                                'Close'] - position)  # profit = close - my_position for each my_position "p"
+                profits += (self.data.iloc[self.t, :]['Close'] - position)  # profit = close - my_position for each my_position "p"
 
             self.profits[self.t] = profits
             self.agent_positions = []
