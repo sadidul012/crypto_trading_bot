@@ -1,7 +1,7 @@
 import pandas as pd
 
 
-class Base(object):
+class BotBase(object):
     def __init__(self, symbol):
         self.symbol = symbol
         self.position = "sell"
@@ -13,6 +13,7 @@ class Base(object):
         self.loss_count = 0
         self.invest = 100
         self.highest = 0
+        self.time = 0
 
         self.history = []
         self.buy = None
@@ -43,8 +44,16 @@ class Base(object):
         if profit <= 0:
             self.loss += profit
             self.loss_count += 1
-        self.history.append(self.buy + [data["date"], data["c"], profit, data["c"] - self.price,
-                                        self.distance_percent(data, base_price) * 100, close])
+        self.history.append(
+            self.buy + [
+                data["date"],
+                data["c"],
+                profit,
+                data["c"] - self.price,
+                self.distance_percent(data, base_price) * 100,
+                close
+            ]
+        )
 
     def take_profit(self, data, base_price, close="take profit"):
         self.stop_loss(data, base_price, close)

@@ -1,11 +1,11 @@
 import pandas as pd
 
-from bots.base import Base
+from bots.botbase import BotBase
 
 
-class StochasticRSI(Base):
+class StochasticRSI(BotBase):
     def __init__(self, symbol):
-        Base.__init__(self, symbol)
+        BotBase.__init__(self, symbol)
 
     def action(self, data):
         if self.position == "buy" and data["c"] > self.highest:

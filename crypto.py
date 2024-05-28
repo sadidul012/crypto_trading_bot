@@ -1,7 +1,8 @@
 import pandas as pd
 import tqdm
 
-from bots.stochastic_rsi import StochasticRSI
+# from bots.stochastic_rsi import StochasticRSI as TheBot
+from bots.grid import Grid as TheBot
 from metrics import stochastics, rsi
 
 
@@ -31,7 +32,7 @@ def main():
     import glob
 
     for symbol in assets_list:
-        trader = StochasticRSI(symbol)
+        trader = TheBot(symbol)
 
         list_ = []
         for file in glob.glob(f"/mnt/Cache/crypto/{symbol}/*.zip"):
@@ -43,6 +44,7 @@ def main():
 
         df = pd.concat(list_)
         df.sort_values(by=[0], inplace=True)
+        df = df.iloc[:100]
         df = df[[0, 1, 2, 3, 4, 5]]
         old_columns = ["Time", "Open", "High", "Low", "Close", "Volume"]
         df.columns = old_columns
@@ -56,6 +58,7 @@ def main():
             progress.update()
 
         trader.summary()
+        break
 
 
 if __name__ == '__main__':
