@@ -1,20 +1,22 @@
 import os.path
 
 from prettytable import PrettyTable as PrettyTable
+
+from rl import ConvDQN
 from utils import load_data, print_stats, plot_multiple_conf_interval
 import random
 import warnings
-from Environment import Environment
-from Agent import Agent
+from DQNEnvironment import DQNEnvironment
+from DQNAgent import DQNAgent
 
 
 def main():
     path = '../data/'
     df = load_data(path)
 
-    REPLAY_MEM_SIZE = 10000
-    BATCH_SIZE = 2024
-    GAMMA = 0.98
+    replay_mem_size = 10000
+    batch_size = 2024
+    gamma = 0.98
     EPS_START = 1
     EPS_END = 0.12
     EPS_STEPS = 300
@@ -24,11 +26,16 @@ def main():
     ACTION_NUMBER = 3
     TARGET_UPDATE = 10
     TRADING_PERIOD = 4000
-    index = random.randrange(len(df) - TRADING_PERIOD - 1)
-    dqn_agent = Agent(
-        REPLAY_MEM_SIZE,
-        BATCH_SIZE,
-        GAMMA,
+    model_path = path + "rl_models/profit_reward_dqn_model_1"
+    model = ConvDQN(input_dim, action_number)
+    model.load_model(model_path)
+    dqn_agent = DQNAgent(
+        model,
+        model,
+        'dqn',
+        replay_mem_size,
+        batch_size,
+        gamma,
         EPS_START,
         EPS_END,
         EPS_STEPS,
@@ -37,7 +44,6 @@ def main():
         HIDDEN_DIM,
         ACTION_NUMBER,
         TARGET_UPDATE,
-        MODEL='dqn',
         DOUBLE=False
     )
     if str(dqn_agent.device) == "cpu":
@@ -47,7 +53,7 @@ def main():
 
     train_size = int(TRADING_PERIOD * 0.8)
     profit_dqn_return = []
-    profit_train_env = Environment(df[index:index + train_size], "profit")
+    profit_train_env = DQNEnvironment(df[index:index + train_size], "profit")
     model_path = path + "rl_models/"
     if not os.path.exists(model_path):
         os.makedirs(path, exist_ok=True)

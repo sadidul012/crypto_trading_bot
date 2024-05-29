@@ -29,7 +29,7 @@ def main():
     hidden_dim = 120
     action_number = 3
     target_update = 10
-    n_test = 10
+    n_test = 1
     trading_period = 4000
 
     model_path = path + "rl_models/profit_reward_dqn_model_1"
@@ -64,13 +64,12 @@ def main():
     i = 0
     while i < n_test:
         print("Test nr. %s" % str(i + 1))
-        index = random.randrange(len(df) - trading_period - 1)
-
-        profit_test_env = DQNEnvironment(df[index + train_size:index + trading_period], "profit")
+        profit_test_env = DQNEnvironment(df[train_size:trading_period], "profit")
 
         # ProfitDQN
         cr_profit_dqn_test, _ = dqn_agent.test(profit_test_env)
         profit_dqn_return.append(profit_test_env.cumulative_return)
+        profit_test_env.print_history()
         profit_test_env.reset()
         i += 1
 

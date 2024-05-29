@@ -1,3 +1,4 @@
+import pandas as pd
 import torch
 import numpy as np
 
@@ -48,6 +49,13 @@ class DQNEnvironment:
 
         self.cumulative_return = []
         self.init_price = 0
+        self.history = []
+
+    def print_history(self):
+        df = pd.DataFrame(self.history, columns=['buy_price', "sell_price", 'profit', "period"])
+        df["PNL (%)"] = df["profit"] / df["buy_price"] * 100
+        print(df.to_string(index=False))
+        print("Total profit:", df["profit"].sum())
 
     def reset(self):
         """
@@ -63,6 +71,7 @@ class DQNEnvironment:
 
         self.cumulative_return = [0 for e in range(len(self.data))]
         self.init_price = self.data.iloc[0, :]['Close']
+        self.history = []
 
     def get_state(self):
         """
@@ -117,6 +126,16 @@ class DQNEnvironment:
                 sell_nothing = True
             for position in self.agent_positions:
                 profits += (self.data.iloc[self.t, :]['Close'] - position)  # profit = close - my_position for each my_position "p"
+
+            if len(self.agent_positions) > 0:
+                self.history.append(
+                    [
+                        self.agent_positions[0],
+                        self.data.iloc[self.t, :]['Close'],
+                        self.data.iloc[self.t, :]['Close'] - self.agent_positions[0],
+                        len(self.agent_positions) + 1
+                    ]
+                )
 
             self.profits[self.t] = profits
             self.agent_positions = []
