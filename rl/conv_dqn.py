@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 
 
@@ -31,3 +32,6 @@ class ConvDQN(nn.Module):
         #    print("max_pool_2_view:\t%s"%str(max_pool_2.shape))
 
         return self.LRelu(self.out_layer(max_pool_2))
+
+    def load_model(self, path):
+        self.load_state_dict(torch.load(path))

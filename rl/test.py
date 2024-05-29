@@ -1,11 +1,14 @@
 import os.path
 
+import torch
 from prettytable import PrettyTable as PrettyTable
+
+from rl import ConvDQN
 from utils import load_data, print_stats, plot_multiple_conf_interval
 import random
 import warnings
-from Environment import Environment
-from Agent import Agent
+from DQNEnvironment import DQNEnvironment
+from DQNAgent import DQNAgent
 
 
 random.seed(0)
@@ -15,52 +18,58 @@ def main():
     path = '../data/'
     df = load_data(path)
 
-    REPLAY_MEM_SIZE = 10000
-    BATCH_SIZE = 2024
-    GAMMA = 0.98
-    EPS_START = 1
-    EPS_END = 0.12
-    EPS_STEPS = 300
-    LEARNING_RATE = 0.001
-    INPUT_DIM = 24
-    HIDDEN_DIM = 120
-    ACTION_NUMBER = 3
-    TARGET_UPDATE = 10
-    N_TEST = 10
-    TRADING_PERIOD = 4000
-    dqn_agent = Agent(
-        REPLAY_MEM_SIZE,
-        BATCH_SIZE,
-        GAMMA,
-        EPS_START,
-        EPS_END,
-        EPS_STEPS,
-        LEARNING_RATE,
-        INPUT_DIM,
-        HIDDEN_DIM,
-        ACTION_NUMBER,
-        TARGET_UPDATE,
-        MODEL='dqn',
-        DOUBLE=False
+    replay_mem_size = 10000
+    batch_size = 2024
+    gamma = 0.98
+    eps_start = 1
+    eps_end = 0.12
+    eps_steps = 300
+    learning_rate = 0.001
+    input_dim = 24
+    hidden_dim = 120
+    action_number = 3
+    target_update = 10
+    n_test = 10
+    trading_period = 4000
+
+    model_path = path + "rl_models/profit_reward_dqn_model_1"
+    model = ConvDQN(input_dim, action_number)
+    model.load_model(model_path)
+    dqn_agent = DQNAgent(
+        model,
+        model,
+        'dqn',
+        replay_mem_size,
+        batch_size,
+        gamma,
+        eps_start,
+        eps_end,
+        eps_steps,
+        learning_rate,
+        input_dim,
+        hidden_dim,
+        action_number,
+        target_update,
+        double=False
     )
     if str(dqn_agent.device) == "cpu":
         warnings.warn(
             "Device is set to CPU. This will lead to a very slow training. Consider to run pretained rl by"
-            "executing main.py script instead of train_test.py!")
+            "executing main.py script instead of train_test.py!"
+        )
 
-    train_size = int(TRADING_PERIOD * 0.8)
+    train_size = int(trading_period * 0.8)
     profit_dqn_return = []
-    model_path = path + "rl_models/"
 
     i = 0
-    while i < N_TEST:
+    while i < n_test:
         print("Test nr. %s" % str(i + 1))
-        index = random.randrange(len(df) - TRADING_PERIOD - 1)
+        index = random.randrange(len(df) - trading_period - 1)
 
-        profit_test_env = Environment(df[index + train_size:index + TRADING_PERIOD], "profit")
+        profit_test_env = DQNEnvironment(df[index + train_size:index + trading_period], "profit")
 
         # ProfitDQN
-        cr_profit_dqn_test, _ = dqn_agent.test(profit_test_env, model_name="profit_reward_dqn_model", path=model_path)
+        cr_profit_dqn_test, _ = dqn_agent.test(profit_test_env)
         profit_dqn_return.append(profit_test_env.cumulative_return)
         profit_test_env.reset()
         i += 1
