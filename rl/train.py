@@ -1,13 +1,12 @@
 import os.path
 
-from prettytable import PrettyTable as PrettyTable
+import torch
 
-from rl import ConvDQN
-from utils import load_data, print_stats, plot_multiple_conf_interval
-import random
+from rl.models.conv_dqn import ConvDQN
+from utils import load_data
 import warnings
-from DQNEnvironment import DQNEnvironment
-from DQNAgent import DQNAgent
+from rl.environments.DQNEnvironment import DQNEnvironment
+from rl.agents.DQNAgent import DQNAgent
 
 
 def main():
@@ -17,18 +16,16 @@ def main():
     replay_mem_size = 10000
     batch_size = 2024
     gamma = 0.98
-    EPS_START = 1
-    EPS_END = 0.12
-    EPS_STEPS = 300
-    LEARNING_RATE = 0.001
-    INPUT_DIM = 24
-    HIDDEN_DIM = 120
-    ACTION_NUMBER = 3
-    TARGET_UPDATE = 10
-    TRADING_PERIOD = 4000
-    model_path = path + "rl_models/profit_reward_dqn_model_1"
+    eps_start = 1
+    eps_end = 0.12
+    eps_steps = 300
+    learning_rate = 0.001
+    input_dim = 24
+    hidden_dim = 1024
+    action_number = 3
+    target_update = 10
+    trading_period = 4000
     model = ConvDQN(input_dim, action_number)
-    model.load_model(model_path)
     dqn_agent = DQNAgent(
         model,
         model,
@@ -36,28 +33,29 @@ def main():
         replay_mem_size,
         batch_size,
         gamma,
-        EPS_START,
-        EPS_END,
-        EPS_STEPS,
-        LEARNING_RATE,
-        INPUT_DIM,
-        HIDDEN_DIM,
-        ACTION_NUMBER,
-        TARGET_UPDATE,
-        DOUBLE=False
+        eps_start,
+        eps_end,
+        eps_steps,
+        learning_rate,
+        input_dim,
+        hidden_dim,
+        action_number,
+        target_update,
+        double=False
     )
     if str(dqn_agent.device) == "cpu":
         warnings.warn(
             "Device is set to CPU. This will lead to a very slow training. Consider to run pretained rl by"
             "executing main.py script instead of train_test.py!")
 
-    train_size = int(TRADING_PERIOD * 0.8)
-    profit_dqn_return = []
-    profit_train_env = DQNEnvironment(df[index:index + train_size], "profit")
+    train_size = int(trading_period * 0.8)
+    profit_train_env = DQNEnvironment(df[:train_size], "profit")
     model_path = path + "rl_models/"
     if not os.path.exists(model_path):
-        os.makedirs(path, exist_ok=True)
-    cr_profit_dqn = dqn_agent.train(profit_train_env, model_path, num_episodes=40)
+        os.makedirs(model_path, exist_ok=True)
+
+    model, cr_profit_dqn = dqn_agent.train(profit_train_env, num_episodes=40)
+    torch.save(model.state_dict(), model_path + "profit_reward_dqn_model")
     profit_train_env.reset()
 
 

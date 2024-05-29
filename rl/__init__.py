@@ -1,4 +1,1 @@
-from conv_dqn import ConvDQN
-from dqn import DQN
-from dueling_dqn import DuelingDQN
-from conv_dueling_dqn import ConvDuelingDQN
+from rl.models.dqn import DQN

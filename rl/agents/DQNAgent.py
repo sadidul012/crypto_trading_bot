@@ -1,11 +1,13 @@
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from utils import ReplayMemory
-from utils import Transition
+from rl.utils import ReplayMemory
+from rl.utils import Transition
 import random
 from tqdm import tqdm
 import os
+from torch.utils.tensorboard import SummaryWriter
 
 
 class DQNAgent:
@@ -237,17 +239,19 @@ class DQNAgent:
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-    def train(self, env, path, num_episodes=40):
+    def train(self, env, num_episodes=40):
         self.training = True
+        writer = SummaryWriter('../data/log', filename_suffix="DQN")
         cumulative_reward = [0 for t in range(num_episodes)]
-        print("Training:")
-        for i_episode in tqdm(range(num_episodes)):
+        progress = tqdm(range(num_episodes), desc="Training")
+        for i_episode in progress:
+            progress.set_postfix({"cumulative_reward": "{:.2f}".format(np.mean(cumulative_reward[:i_episode]))})
+
             # Initialize the environment and state
             env.reset()  # reset the env st it is set at the beginning of the time series
             self.steps_done = 0
             state = env.get_state()
             for t in range(len(env.data)):  # while not env.done
-
                 # Select and perform an action
                 action = self.select_action(state)
                 reward, done, _ = env.step(action)
@@ -279,24 +283,11 @@ class DQNAgent:
             if i_episode % self.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
-        # save the model
-        if self.double:
-            model_name = env.reward_f + '_reward_double_' + self.model + '_model'
-            count = 0
-            while os.path.exists(path + model_name):  # avoid overrinding rl
-                count += 1
-                model_name = model_name + "_" + str(count)
+            writer.add_scalar('EpisodeReward/train', cumulative_reward[i_episode], i_episode)
+            writer.add_scalar('EpisodeAvgReward/train', np.mean(cumulative_reward[:i_episode]), i_episode)
+        writer.close()
 
-        else:
-            model_name = env.reward_f + '_reward_' + self.model + '_model'
-            count = 0
-            while os.path.exists(path + model_name):  # avoid overrinding rl
-                count += 1
-                model_name = model_name + "_" + str(count)
-
-        torch.save(self.policy_net.state_dict(), path + model_name)
-
-        return cumulative_reward
+        return self.policy_net, cumulative_reward
 
     def test(self, env_test):
         self.training = False
@@ -304,7 +295,7 @@ class DQNAgent:
         reward_list = [0 for t in range(len(env_test.data))]
         env_test.reset()  # reset the env st it is set at the beginning of the time serie
         state = env_test.get_state()
-        for t in tqdm(range(len(env_test.data))):  # while not env.done
+        for t in tqdm(range(len(env_test.data)), desc="Testing"):  # while not env.done
 
             # Select and perform an action
             action = self.select_action(state)

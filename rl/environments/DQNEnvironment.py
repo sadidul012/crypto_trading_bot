@@ -118,6 +118,7 @@ class DQNEnvironment:
 
         if act == 1:  # Buy
             self.agent_positions.append(self.data.iloc[self.t, :]['Close'])
+            reward += 5
 
         sell_nothing = False
         if act == 2:  # Sell
@@ -139,7 +140,8 @@ class DQNEnvironment:
 
             self.profits[self.t] = profits
             self.agent_positions = []
-            # reward += profits
+            reward += profits * 10
+            # print("profit", profits)
 
         self.agent_open_position_value = 0
         for position in self.agent_positions:
@@ -147,36 +149,36 @@ class DQNEnvironment:
             # TO CHECK if the calculus is correct according to the definition
             self.cumulative_return[self.t] += (position - self.init_price) / self.init_price
 
-        # COLLECT THE REWARD
-        reward = 0
-        if self.reward_f == "sr":
-            sr = self.agent_open_position_value / np.std(np.array(self.data.iloc[0:self.t]['Close'])) if np.std(
-                np.array(self.data.iloc[0:self.t]['Close'])) != 0 else 0
-            # sr = self.profits[self.t] / np.std(np.array(self.profits))
-            if sr <= -4:
-                reward = -10
-            elif sr < -1:
-                reward = -4
-            elif sr < 0:
-                reward = -1
-            elif sr == 0:
-                reward = 0
-            elif sr <= 1:
-                reward = 1
-            elif sr < 4:
-                reward = 4
-            else:
-                reward = 10
-
-        if self.reward_f == "profit":
-            p = self.profits[self.t]
-            if p > 0:
-                reward = 1
-            elif p < 0:
-                reward = -1
-            elif p == 0:
-                reward = 0
-
+        # # COLLECT THE REWARD
+        # reward = 0
+        # if self.reward_f == "sr":
+        #     sr = self.agent_open_position_value / np.std(np.array(self.data.iloc[0:self.t]['Close'])) if np.std(
+        #         np.array(self.data.iloc[0:self.t]['Close'])) != 0 else 0
+        #     # sr = self.profits[self.t] / np.std(np.array(self.profits))
+        #     if sr <= -4:
+        #         reward = -10
+        #     elif sr < -1:
+        #         reward = -4
+        #     elif sr < 0:
+        #         reward = -1
+        #     elif sr == 0:
+        #         reward = 0
+        #     elif sr <= 1:
+        #         reward = 1
+        #     elif sr < 4:
+        #         reward = 4
+        #     else:
+        #         reward = 10
+        #
+        # if self.reward_f == "profit":
+        #     p = self.profits[self.t]
+        #     if p > 0:
+        #         reward = 1
+        #     elif p < 0:
+        #         reward = -1
+        #     elif p == 0:
+        #         reward = 0
+        #
         if sell_nothing and (reward > -5):
             reward = -5
 

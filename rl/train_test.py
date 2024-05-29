@@ -2,8 +2,8 @@ from prettytable import PrettyTable as PrettyTable
 from utils import load_data, print_stats, plot_multiple_conf_interval
 import random
 import warnings
-from Environment import Environment
-from Agent import Agent
+from rl.environments.Environment import Environment
+from rl.agents.Agent import Agent
 
 
 def main():

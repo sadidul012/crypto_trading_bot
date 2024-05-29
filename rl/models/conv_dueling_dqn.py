@@ -11,8 +11,7 @@ class ConvDuelingDQN(nn.Module):
         self.maxPool = nn.MaxPool1d(max_pool_kernel, stride=1)
         self.LRelu = nn.LeakyReLU()
         self.conv2 = nn.Conv1d(n_filters, n_filters, kernel_size // 2)
-        self.hidden_dim = n_filters * ((((
-                                                     seq_len_in - kernel_size + 1) - max_pool_kernel + 1) - kernel_size // 2 + 1) - max_pool_kernel + 1)
+        self.hidden_dim = n_filters * ((((seq_len_in - kernel_size + 1) - max_pool_kernel + 1) - kernel_size // 2 + 1) - max_pool_kernel + 1)
         paper_hidden_dim = 120
         self.split_layer = nn.Linear(self.hidden_dim, paper_hidden_dim)
 

@@ -1,14 +1,11 @@
-import os.path
-
-import torch
 from prettytable import PrettyTable as PrettyTable
 
-from rl import ConvDQN
-from utils import load_data, print_stats, plot_multiple_conf_interval
+from rl.models.conv_dqn import ConvDQN
+from utils import load_data, print_stats
 import random
 import warnings
-from DQNEnvironment import DQNEnvironment
-from DQNAgent import DQNAgent
+from rl.environments.DQNEnvironment import DQNEnvironment
+from rl.agents.DQNAgent import DQNAgent
 
 
 random.seed(0)
@@ -26,13 +23,13 @@ def main():
     eps_steps = 300
     learning_rate = 0.001
     input_dim = 24
-    hidden_dim = 120
+    hidden_dim = 1024
     action_number = 3
     target_update = 10
     n_test = 1
     trading_period = 4000
 
-    model_path = path + "rl_models/profit_reward_dqn_model_1"
+    model_path = path + "rl_models/profit_reward_dqn_model"
     model = ConvDQN(input_dim, action_number)
     model.load_model(model_path)
     dqn_agent = DQNAgent(
