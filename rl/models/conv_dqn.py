@@ -27,3 +27,7 @@ class ConvDQN(nn.Module):
 
     def load_model(self, path):
         self.load_state_dict(torch.load(path))
+
+    def save_model(self, path):
+        torch.save(self.state_dict(), path)
+

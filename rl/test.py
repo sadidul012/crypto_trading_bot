@@ -1,5 +1,8 @@
+import os
+
 from prettytable import PrettyTable as PrettyTable
 
+from config import settings
 from rl.models.conv_dqn import ConvDQN
 from utils import load_data, print_stats
 import random
@@ -11,43 +14,30 @@ from rl.agents.DQNAgent import DQNAgent
 random.seed(0)
 
 
-def main():
-    path = '../data/'
-    df = load_data(path)
+def load_agent():
+    model_path = settings.DATA_PATH + "rl_models/profit_reward_dqn_model"
+    model = ConvDQN(settings.INPUT_DIM, settings.ACTION_NUMBER)
 
-    replay_mem_size = 10000
-    batch_size = 2024
-    gamma = 0.98
-    eps_start = 1
-    eps_end = 0.12
-    eps_steps = 300
-    learning_rate = 0.001
-    input_dim = 24
-    hidden_dim = 1024
-    action_number = 3
-    target_update = 10
-    n_test = 1
-    trading_period = 4000
+    if os.path.exists(model_path):
+        print("Loading model...")
+        model.load_model(model_path)
 
-    model_path = path + "rl_models/profit_reward_dqn_model"
-    model = ConvDQN(input_dim, action_number)
-    model.load_model(model_path)
     dqn_agent = DQNAgent(
         model,
         model,
-        'dqn',
-        replay_mem_size,
-        batch_size,
-        gamma,
-        eps_start,
-        eps_end,
-        eps_steps,
-        learning_rate,
-        input_dim,
-        hidden_dim,
-        action_number,
-        target_update,
-        double=False
+        settings.MODEL_NAME,
+        settings.REPLAY_MEM_SIZE,
+        settings.BATCH_SIZE,
+        settings.GAMMA,
+        settings.EPS_START,
+        settings.EPS_END,
+        settings.EPS_STEPS,
+        settings.LEARNING_RATE,
+        settings.INPUT_DIM,
+        settings.HIDDEN_DIM,
+        settings.ACTION_NUMBER,
+        settings.TARGET_UPDATE,
+        double=settings.DOUBLE
     )
     if str(dqn_agent.device) == "cpu":
         warnings.warn(
@@ -55,13 +45,19 @@ def main():
             "executing main.py script instead of train_test.py!"
         )
 
-    train_size = int(trading_period * 0.8)
+    return dqn_agent, model
+
+
+def main():
+    df = load_data(settings.DATA_PATH)
+    train_size = int(settings.TRADING_PERIOD * 0.8)
+    dqn_agent, _ = load_agent()
     profit_dqn_return = []
 
     i = 0
-    while i < n_test:
+    while i < settings.N_TEST:
         print("Test nr. %s" % str(i + 1))
-        profit_test_env = DQNEnvironment(df[train_size:trading_period], "profit")
+        profit_test_env = DQNEnvironment(df[train_size:settings.TRADING_PERIOD], "profit")
 
         # ProfitDQN
         cr_profit_dqn_test, _ = dqn_agent.test(profit_test_env)

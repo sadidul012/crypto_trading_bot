@@ -1,6 +1,5 @@
 import os
 
-from pydantic import computed_field
 from pydantic_settings import BaseSettings
 # from pydantic import BaseSettings
 
@@ -8,6 +7,23 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     API_KEY: str
     SECRET_KEY: str
+
+    DATA_PATH: str
+    MODEL_NAME: str
+    REPLAY_MEM_SIZE: int
+    BATCH_SIZE: int
+    GAMMA: float
+    EPS_START: int
+    EPS_END: float
+    EPS_STEPS: int
+    LEARNING_RATE: float
+    INPUT_DIM: int
+    HIDDEN_DIM: int
+    ACTION_NUMBER: int
+    TARGET_UPDATE: int
+    N_TEST: int
+    TRADING_PERIOD: int
+    DOUBLE: bool
 
     class Config:
         # env_file = '/.env'
