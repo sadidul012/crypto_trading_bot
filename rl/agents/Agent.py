@@ -1,101 +1,92 @@
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-from rl import ConvDQN, ConvDuelingDQN
-from utils import ReplayMemory
-from utils import Transition
+from rl.agents.memory import ReplayMemory, Transition
 import random
 from tqdm import tqdm
-import re
-import os
+from torch.utils.tensorboard import SummaryWriter
 
 
-class Agent:
+class DQNAgent:
     """Definition of the Agent that will interact with the environment.
 
     Attributes:
-        REPLAY_MEM_SIZE (:obj:`int`): max capacity of Replay Memory
+        replay_mem_size (:obj:`int`): max capacity of Replay Memory
 
-        BATCH_SIZE (:obj:`int`): Batch size. Default is 40 as specified in the paper.
+        batch_size (:obj:`int`): Batch size. Default is 40 as specified in the paper.
 
-        GAMMA (:obj:`float`): The discount, should be a constant between 0 and 1
+        gamma (:obj:`float`): The discount, should be a constant between 0 and 1
             that ensures the sum converges. It also controls the importance of future
             expected reward.
 
-        EPS_START(:obj:`float`): initial value for epsilon of the e-greedy action
+        eps_start(:obj:`float`): initial value for epsilon of the e-greedy action
             selection
 
-        EPS_END(:obj:`float`): final value for epsilon of the e-greedy action
+        eps_end(:obj:`float`): final value for epsilon of the e-greedy action
             selection
 
-        LEARNING_RATE(:obj:`float`): learning rate of the optimizer
+        learning_rate(:obj:`float`): learning rate of the optimizer
             (Adam)
 
-        INPUT_DIM (:obj:`int`): input dimentionality withut considering batch size.
+        input_dim (:obj:`int`): input dimentionality withut considering batch size.
 
-        HIDDEN_DIM (:obj:`int`): hidden layer dimentionality (for Linear rl only)
+        hidden_dim (:obj:`int`): hidden layer dimentionality (for Linear rl only)
 
-        ACTION_NUMBER (:obj:`int`): dimentionality of output layer of the Q network
+        action_number (:obj:`int`): dimentionality of output layer of the Q network
 
-        TARGET_UPDATE (:obj:`int`): period of Q target network updates
+        target_update (:obj:`int`): period of Q target network updates
 
-        MODEL (:obj:`string`): type of the model.
+        model (:obj:`string`): type of the model.
 
-        DOUBLE (:obj:`bool`): Type of Q function computation.
+        double (:obj:`bool`): Type of Q function computation.
     """
 
-    def __init__(self,
-             REPLAY_MEM_SIZE=10000,
-             BATCH_SIZE=40,
-             GAMMA=0.98,
-             EPS_START=1,
-             EPS_END=0.12,
-             EPS_STEPS=300,
-             LEARNING_RATE=0.001,
-             INPUT_DIM=24,
-             HIDDEN_DIM=120,
-             ACTION_NUMBER=3,
-             TARGET_UPDATE=10,
-             MODEL='ddqn',
-             DOUBLE=True
-        ):
+    def __init__(
+        self,
+        policy_net,
+        target_net,
+        model_name,
+        replay_mem_size=10000,
+        batch_size=40,
+        gamma=0.98,
+        eps_start=1,
+        eps_end=0.12,
+        eps_steps=300,
+        learning_rate=0.001,
+        input_dim=24,
+        hidden_dim=120,
+        action_number=3,
+        target_update=10,
+        double=True
+    ):
 
-        self.REPLAY_MEM_SIZE = REPLAY_MEM_SIZE
-        self.BATCH_SIZE = BATCH_SIZE
-        self.GAMMA = GAMMA
-        self.EPS_START = EPS_START
-        self.EPS_END = EPS_END
-        self.EPS_STEPS = EPS_STEPS
-        self.LEARNING_RATE = LEARNING_RATE
-        self.INPUT_DIM = INPUT_DIM
-        self.HIDDEN_DIM = HIDDEN_DIM
-        self.ACTION_NUMBER = ACTION_NUMBER
-        self.TARGET_UPDATE = TARGET_UPDATE
-        self.MODEL = MODEL  # deep q network (dqn) or Dueling deep q network (ddqn)
-        self.DOUBLE = DOUBLE  # to understand if use or do not use a 'Double' model (regularization)
-        self.TRAINING = True  # to do not pick random actions during testing
+        self.replay_mem_size = replay_mem_size
+        self.batch_size = batch_size
+        self.gamma = gamma
+        self.eps_start = eps_start
+        self.eps_end = eps_end
+        self.eps_steps = eps_steps
+        self.learning_rate = learning_rate
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.action_number = action_number
+        self.target_update = target_update
+        self.model = model_name  # deep q network (dqn) or Dueling deep q network (ddqn)
+        self.double = double  # to understand if use or do not use a 'Double' model (regularization)
+        self.training = True  # to do not pick random actions during testing
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print("Agent is using device:\t" + str(self.device))
-        '''elif self.MODEL == 'lin_ddqn':
-            self.policy_net = DuelingDQN(self.INPUT_DIM, self.HIDDEN_DIM, self.ACTION_NUMBER).to(self.device)
-            self.target_net = DuelingDQN(self.INPUT_DIM, self.HIDDEN_DIM, self.ACTION_NUMBER).to(self.device)
-        elif self.MODEL == 'lin_dqn':
-            self.policy_net = DQN(self.INPUT_DIM, self.HIDDEN_DIM, self.ACTION_NUMBER).to(self.device)
-            self.target_net = DQN(self.INPUT_DIM, self.HIDDEN_DIM, self.ACTION_NUMBER).to(self.device)
-        '''
 
-        if self.MODEL == 'ddqn':
-            self.policy_net = ConvDuelingDQN(self.INPUT_DIM, self.ACTION_NUMBER).to(self.device)
-            self.target_net = ConvDuelingDQN(self.INPUT_DIM, self.ACTION_NUMBER).to(self.device)
-        elif self.MODEL == 'dqn':
-            self.policy_net = ConvDQN(self.INPUT_DIM, self.ACTION_NUMBER).to(self.device)
-            self.target_net = ConvDQN(self.INPUT_DIM, self.ACTION_NUMBER).to(self.device)
-
+        self.policy_net = policy_net
+        self.target_net = target_net
+        self.policy_net.to(self.device)
+        self.target_net.to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.LEARNING_RATE)
-        self.memory = ReplayMemory(self.REPLAY_MEM_SIZE)
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
+        self.memory = ReplayMemory(self.replay_mem_size)
         self.steps_done = 0
         self.training_cumulative_reward = []
 
@@ -103,13 +94,13 @@ class Agent:
         """ the epsilon-greedy action selection"""
         state = state.unsqueeze(0).unsqueeze(1)
         sample = random.random()
-        if self.TRAINING:
-            if self.steps_done > self.EPS_STEPS:
-                eps_threshold = self.EPS_END
+        if self.training:
+            if self.steps_done > self.eps_steps:
+                eps_threshold = self.eps_end
             else:
-                eps_threshold = self.EPS_START
+                eps_threshold = self.eps_start
         else:
-            eps_threshold = self.EPS_END
+            eps_threshold = self.eps_end
 
         self.steps_done += 1
         # [Exploitation] pick the best action according to current Q approx.
@@ -122,13 +113,13 @@ class Agent:
 
         # [Exploration]  pick a random action from the action space
         else:
-            return torch.tensor([random.randrange(self.ACTION_NUMBER)], device=self.device, dtype=torch.long)
+            return torch.tensor([random.randrange(self.action_number)], device=self.device, dtype=torch.long)
 
     def optimize_model(self):
-        if len(self.memory) < self.BATCH_SIZE:
+        if len(self.memory) < self.batch_size:
             # it will return without doing nothing if we have not enough data to sample
             return
-        transitions = self.memory.sample(self.BATCH_SIZE)
+        transitions = self.memory.sample(self.batch_size)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
         # to Transition of batch-arrays.
@@ -146,10 +137,10 @@ class Agent:
         non_final_next_states = torch.cat(nfns).view(len(nfns), -1)
         non_final_next_states = non_final_next_states.unsqueeze(1)
 
-        state_batch = torch.cat(batch.state).view(self.BATCH_SIZE, -1)
+        state_batch = torch.cat(batch.state).view(self.batch_size, -1)
         state_batch = state_batch.unsqueeze(1)
-        action_batch = torch.cat(batch.action).view(self.BATCH_SIZE, -1)
-        reward_batch = torch.cat(batch.reward).view(self.BATCH_SIZE, -1)
+        action_batch = torch.cat(batch.action).view(self.batch_size, -1)
+        reward_batch = torch.cat(batch.reward).view(self.batch_size, -1)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
@@ -163,12 +154,12 @@ class Agent:
         # state value or 0 in case the state was final.
         # detach removes the tensor from the graph -> no gradient computation is
         # required
-        next_state_values = torch.zeros(self.BATCH_SIZE, device=self.device)
+        next_state_values = torch.zeros(self.batch_size, device=self.device)
         next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
-        next_state_values = next_state_values.view(self.BATCH_SIZE, -1)
+        next_state_values = next_state_values.view(self.batch_size, -1)
 
         # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
+        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
         # print("expected_state_action_values.shape:\t%s"%str(expected_state_action_values.shape))
 
         # Compute MSE loss
@@ -183,10 +174,10 @@ class Agent:
         self.optimizer.step()
 
     def optimize_double_dqn_model(self):
-        if len(self.memory) < self.BATCH_SIZE:
+        if len(self.memory) < self.batch_size:
             # it will return without doing nothing if we have not enough data to sample
             return
-        transitions = self.memory.sample(self.BATCH_SIZE)
+        transitions = self.memory.sample(self.batch_size)
         # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
         # detailed explanation). This converts batch-array of Transitions
         # to Transition of batch-arrays.
@@ -198,16 +189,19 @@ class Agent:
         #
         # non_final_mask is a column vector telling wich state of the sampled is final
         # non_final_next_states contains all the non-final states sampled
-        non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), device=self.device,
-                                      dtype=torch.bool)
+        non_final_mask = torch.tensor(
+            tuple(map(lambda s: s is not None, batch.next_state)),
+            device=self.device,
+            dtype=torch.bool
+        )
         nfns = [s for s in batch.next_state if s is not None]
         non_final_next_states = torch.cat(nfns).view(len(nfns), -1)
         non_final_next_states = non_final_next_states.unsqueeze(1)
 
-        state_batch = torch.cat(batch.state).view(self.BATCH_SIZE, -1)
+        state_batch = torch.cat(batch.state).view(self.batch_size, -1)
         state_batch = state_batch.unsqueeze(1)
-        action_batch = torch.cat(batch.action).view(self.BATCH_SIZE, -1)
-        reward_batch = torch.cat(batch.reward).view(self.BATCH_SIZE, -1)
+        action_batch = torch.cat(batch.action).view(self.batch_size, -1)
+        reward_batch = torch.cat(batch.reward).view(self.batch_size, -1)
         # print("state_batch shape: %s\nstate_batch[0]:%s\nactionbatch shape: %s\nreward_batch shape: %s"%(str(state_batch.view(40,-1).shape),str(state_batch.view(40,-1)[0]),str(action_batch.shape),str(reward_batch.shape)))
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
@@ -225,13 +219,13 @@ class Agent:
         # state value or 0 in case the state was final.
         # detach removes the tensor from the graph -> no gradient computation is
         # required
-        next_state_values = torch.zeros(self.BATCH_SIZE, device=self.device).view(self.BATCH_SIZE, -1)
+        next_state_values = torch.zeros(self.batch_size, device=self.device).view(self.batch_size, -1)
 
         out = self.target_net(non_final_next_states)
         next_state_values[non_final_mask] = out.gather(1, next_state_action[non_final_mask])
         # next_state_values = next_state_values.view(self.BATCH_SIZE, -1)
         # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
+        expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
         # Compute MSE loss
         loss = F.mse_loss(state_action_values, expected_state_action_values)
@@ -243,17 +237,19 @@ class Agent:
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-    def train(self, env, path, num_episodes=40):
-        self.TRAINING = True
+    def train(self, env, num_episodes=40):
+        self.training = True
+        writer = SummaryWriter('../data/log', filename_suffix="DQN")
         cumulative_reward = [0 for t in range(num_episodes)]
-        print("Training:")
-        for i_episode in tqdm(range(num_episodes)):
+        progress = tqdm(range(num_episodes), desc="Training")
+        for i_episode in progress:
+            progress.set_postfix({"cumulative_reward": "{:.2f}".format(np.mean(cumulative_reward[:i_episode]))})
+
             # Initialize the environment and state
-            env.reset()  # reset the env st it is set at the beginning of the time serie
+            env.reset()  # reset the env st it is set at the beginning of the time series
             self.steps_done = 0
             state = env.get_state()
             for t in range(len(env.data)):  # while not env.done
-
                 # Select and perform an action
                 action = self.select_action(state)
                 reward, done, _ = env.step(action)
@@ -273,7 +269,7 @@ class Agent:
                 # Perform one step of the optimization (on the policy network): note that
                 # it will return without doing nothing if we have not enough data to sample
 
-                if self.DOUBLE:
+                if self.double:
                     self.optimize_double_dqn_model()
                 else:
                     self.optimize_model()
@@ -282,56 +278,22 @@ class Agent:
                     break
 
             # Update the target network, copying all weights and biases of policy_net
-            if i_episode % self.TARGET_UPDATE == 0:
+            if i_episode % self.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
-        # save the model
-        if self.DOUBLE:
-            model_name = env.reward_f + '_reward_double_' + self.MODEL + '_model'
-            count = 0
-            while os.path.exists(path + model_name):  # avoid overrinding rl
-                count += 1
-                model_name = model_name + "_" + str(count)
+            writer.add_scalar('EpisodeReward/train', cumulative_reward[i_episode], i_episode)
+            writer.add_scalar('EpisodeAvgReward/train', np.mean(cumulative_reward[:i_episode]), i_episode)
+        writer.close()
 
-        else:
-            model_name = env.reward_f + '_reward_' + self.MODEL + '_model'
-            count = 0
-            while os.path.exists(path + model_name):  # avoid overrinding rl
-                count += 1
-                model_name = model_name + "_" + str(count)
+        return self.policy_net, cumulative_reward
 
-        torch.save(self.policy_net.state_dict(), path + model_name)
-
-        return cumulative_reward
-
-    def test(self, env_test, model_name=None, path=None):
-        self.TRAINING = False
+    def test(self, env_test):
+        self.training = False
         cumulative_reward = [0 for t in range(len(env_test.data))]
         reward_list = [0 for t in range(len(env_test.data))]
-        if model_name is None:
-            pass
-        elif path is not None:
-            if re.match(".*_dqn_.*", model_name):
-                self.policy_net = ConvDQN(self.INPUT_DIM, self.ACTION_NUMBER).to(self.device)
-                if str(self.device) == "cuda":
-                    self.policy_net.load_state_dict(torch.load(path + model_name))
-                else:
-                    self.policy_net.load_state_dict(torch.load(path + model_name, map_location=torch.device('cpu')))
-            elif re.match(".*_ddqn_.*", model_name):
-                self.policy_net = ConvDuelingDQN(self.INPUT_DIM, self.ACTION_NUMBER).to(self.device)
-                if str(self.device) == "cuda":
-                    self.policy_net.load_state_dict(torch.load(path + model_name))
-                else:
-                    self.policy_net.load_state_dict(torch.load(path + model_name, map_location=torch.device('cpu')))
-            else:
-                raise RuntimeError("Please Provide a valid model name or valid path.")
-        else:
-            raise RuntimeError('Path can not be None if model Name is not None.')
-
         env_test.reset()  # reset the env st it is set at the beginning of the time serie
         state = env_test.get_state()
-        for t in tqdm(range(len(env_test.data))):  # while not env.done
-
+        for t in tqdm(range(len(env_test.data)), desc="Testing"):  # while not env.done
             # Select and perform an action
             action = self.select_action(state)
 

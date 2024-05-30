@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     DATA_PATH: str
     MODEL_NAME: str
+    MODEL_FOLDER: str
+    MODEL_LOCATION: str
     REPLAY_MEM_SIZE: int
     BATCH_SIZE: int
     GAMMA: float

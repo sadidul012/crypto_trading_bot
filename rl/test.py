@@ -1,21 +1,26 @@
 import os
 
+import numpy as np
 from prettytable import PrettyTable as PrettyTable
 
 from config import settings
 from rl.models.conv_dqn import ConvDQN
-from utils import load_data, print_stats
 import random
 import warnings
-from rl.environments.DQNEnvironment import DQNEnvironment
-from rl.agents.DQNAgent import DQNAgent
+from rl.environments.Environment import DQNEnvironment
+from rl.agents.Agent import DQNAgent
+from process import load_data
 
 
 random.seed(0)
 
 
-def load_agent():
-    model_path = settings.DATA_PATH + "rl_models/profit_reward_dqn_model"
+def print_stats(model, c_return, t):
+    c_return = np.array(c_return).flatten()
+    t.add_row([str(model), "%.2f" % np.mean(c_return), "%.2f" % np.amax(c_return), "%.2f" % np.amin(c_return), "%.2f" % np.std(c_return)])
+
+
+def load_agent(model_path):
     model = ConvDQN(settings.INPUT_DIM, settings.ACTION_NUMBER)
 
     if os.path.exists(model_path):
@@ -49,15 +54,17 @@ def load_agent():
 
 
 def main():
-    df = load_data(settings.DATA_PATH)
-    train_size = int(settings.TRADING_PERIOD * 0.8)
-    dqn_agent, _ = load_agent()
+    df = load_data('FTMUSDT', replace_column=False)
+    train_size = int(df.shape[0] * 0.8)
+    model_path = settings.DATA_PATH + settings.MODEL_LOCATION
+    dqn_agent, _ = load_agent(model_path)
     profit_dqn_return = []
+    print(df.head())
 
     i = 0
     while i < settings.N_TEST:
         print("Test nr. %s" % str(i + 1))
-        profit_test_env = DQNEnvironment(df[train_size:settings.TRADING_PERIOD], "profit")
+        profit_test_env = DQNEnvironment(df[train_size:], "profit")
 
         # ProfitDQN
         cr_profit_dqn_test, _ = dqn_agent.test(profit_test_env)
@@ -69,9 +76,6 @@ def main():
     t = PrettyTable(["Trading System", "Avg. Return (%)", "Max Return (%)", "Min Return (%)", "Std. Dev."])
     print_stats("ProfitDQN", profit_dqn_return, t)
     print(t)
-    # plot_multiple_conf_interval(
-    #     ["ProfitDQN", "SharpeDQN", "ProfitDDQN", "SharpeDDQN", "ProfitD-DDQN", "SharpeD-DDQN"],
-    #     [profit_dqn_return])
 
 
 if __name__ == '__main__':

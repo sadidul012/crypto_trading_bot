@@ -1,10 +1,10 @@
+import pandas as pd
 import torch
-import numpy as np
 
 
 # TODO: modify the reward st. we can choose between sharpe ratio reward or profit
 # reward as shown in the paper.
-class Environment:
+class DQNEnvironment:
     """Definition of the trading environment for the DQN-Agent.
 
     Attributes:
@@ -40,6 +40,28 @@ class Environment:
         self.data = data
         self.reward_f = reward if reward == "sr" else "profit"
         self.reset()
+        self.t = 23
+        self.done = False
+        self.profits = []
+        self.agent_positions = []
+        self.agent_open_position_value = 0
+
+        self.cumulative_return = []
+        self.init_price = 0
+        self.history = []
+
+    def print_history(self):
+        df = pd.DataFrame(self.history, columns=['buy_price', "sell_price", 'profit', "period"])
+        df["PNL (%)"] = df["profit"] / df["buy_price"] * 100
+        print(df.to_string(index=False))
+        print("Total profit:", df["profit"].sum())
+        total_win = (df["profit"] > 0).sum()
+        print("Total trades", df.shape[0])
+        print("Total win:", total_win)
+        print("Total loss:", df.shape[0] - total_win)
+        print("Max win:", df["profit"].max())
+        print("Max loss:", df["profit"].min())
+        print("STD:", df["profit"].median())
 
     def reset(self):
         """
@@ -55,6 +77,7 @@ class Environment:
 
         self.cumulative_return = [0 for e in range(len(self.data))]
         self.init_price = self.data.iloc[0, :]['Close']
+        self.history = []
 
     def get_state(self):
         """
@@ -64,8 +87,11 @@ class Environment:
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if not self.done:
-            return torch.tensor([el for el in self.data.iloc[self.t - 23:self.t + 1, :]['Close']], device=device,
-                                dtype=torch.float)
+            return torch.tensor(
+                [el for el in self.data.iloc[self.t - 23:self.t + 1, :]['Close']],
+                device=device,
+                dtype=torch.float
+            )
         else:
             return None
 
@@ -98,6 +124,7 @@ class Environment:
 
         if act == 1:  # Buy
             self.agent_positions.append(self.data.iloc[self.t, :]['Close'])
+            reward += 5
 
         sell_nothing = False
         if act == 2:  # Sell
@@ -107,9 +134,20 @@ class Environment:
             for position in self.agent_positions:
                 profits += (self.data.iloc[self.t, :]['Close'] - position)  # profit = close - my_position for each my_position "p"
 
+            if len(self.agent_positions) > 0:
+                self.history.append(
+                    [
+                        self.agent_positions[0],
+                        self.data.iloc[self.t, :]['Close'],
+                        self.data.iloc[self.t, :]['Close'] - self.agent_positions[0],
+                        len(self.agent_positions) + 1
+                    ]
+                )
+
             self.profits[self.t] = profits
             self.agent_positions = []
-            # reward += profits
+            reward += profits * 10
+            # print("profit", profits)
 
         self.agent_open_position_value = 0
         for position in self.agent_positions:
@@ -117,44 +155,19 @@ class Environment:
             # TO CHECK if the calculus is correct according to the definition
             self.cumulative_return[self.t] += (position - self.init_price) / self.init_price
 
-        # COLLECT THE REWARD
-        reward = 0
-        if self.reward_f == "sr":
-            sr = self.agent_open_position_value / np.std(np.array(self.data.iloc[0:self.t]['Close'])) if np.std(
-                np.array(self.data.iloc[0:self.t]['Close'])) != 0 else 0
-            # sr = self.profits[self.t] / np.std(np.array(self.profits))
-            if sr <= -4:
-                reward = -10
-            elif sr < -1:
-                reward = -4
-            elif sr < 0:
-                reward = -1
-            elif sr == 0:
-                reward = 0
-            elif sr <= 1:
-                reward = 1
-            elif sr < 4:
-                reward = 4
-            else:
-                reward = 10
-
-        if self.reward_f == "profit":
-            p = self.profits[self.t]
-            if p > 0:
-                reward = 1
-            elif p < 0:
-                reward = -1
-            elif p == 0:
-                reward = 0
-
-        if sell_nothing and (reward > -5):
-            reward = -5
+        if sell_nothing and (reward > -1):
+            reward = -1
 
         # UPDATE THE STATE
         self.t += 1
 
-        if (self.t == len(self.data) - 1):
+        if self.t == len(self.data) - 1:
             self.done = True
 
-        return torch.tensor([reward], device=device, dtype=torch.float), self.done, torch.tensor([state],
-                                                                                                 dtype=torch.float)  # reward, done, current_state
+        reward += len(self.agent_positions) * 2
+
+        return (
+            torch.tensor([reward], device=device, dtype=torch.float),
+            self.done,
+            torch.tensor([state], dtype=torch.float)
+        )  # reward, done, current_state

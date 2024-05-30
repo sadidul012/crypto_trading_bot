@@ -1,19 +1,18 @@
 import pandas as pd
 import tqdm
-
 # from bots.stochastic_rsi import StochasticRSI as TheBot
 from bots.grid import Grid as TheBot
 from metrics import stochastics, rsi
+from process import load_data, columns
 
 
 assets_list = ['FTMUSDT', 'ETHUSDT', "TRXUSDT", "XRPUSDT"]
 coins = dict(zip(assets_list, [None] * len(assets_list)))
 metrics = dict(zip(assets_list, [None] * len(assets_list)))
-columns = ["t", "o", "h", "l", "c", "v"]
 
 
 def manipulation(trader, source):
-    global coins, metrics, columns
+    global coins, metrics
     source = dict(zip(columns, source))
     df = pd.DataFrame([source])
     coins[trader.symbol] = pd.concat([coins[trader.symbol].iloc[-17:], df]) if coins[trader.symbol] is not None else df
@@ -28,30 +27,9 @@ def manipulation(trader, source):
 
 
 def main():
-    import zipfile
-    import glob
-
     for symbol in assets_list:
         trader = TheBot(symbol)
-
-        list_ = []
-        for file in glob.glob(f"/mnt/Cache/crypto/{symbol}/*.zip"):
-            zf = zipfile.ZipFile(file)
-            text_files = zf.infolist()
-            for text_file in text_files:
-                df = pd.read_csv(zf.open(text_file.filename), header=None)
-                list_.append(df)
-
-        df = pd.concat(list_)
-        df.sort_values(by=[0], inplace=True)
-        df = df.iloc[:100]
-        df = df[[0, 1, 2, 3, 4, 5]]
-        old_columns = ["Time", "Open", "High", "Low", "Close", "Volume"]
-        df.columns = old_columns
-
-        df = df[old_columns]
-        df.columns = columns
-
+        df = load_data(symbol)
         progress = tqdm.tqdm(total=df.shape[0], position=0, leave=True, desc=symbol)
         for i, row in df.iterrows():
             manipulation(trader, list(row.values))
