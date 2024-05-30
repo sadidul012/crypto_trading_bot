@@ -44,6 +44,7 @@ class DQNEnvironment:
         self.done = False
         self.profits = []
         self.agent_positions = []
+        self.agent_positions_date = []
         self.agent_open_position_value = 0
 
         self.cumulative_return = []
@@ -51,7 +52,7 @@ class DQNEnvironment:
         self.history = []
 
     def print_history(self):
-        df = pd.DataFrame(self.history, columns=['buy_price', "sell_price", 'profit', "period"])
+        df = pd.DataFrame(self.history, columns=['buy_date', 'sell_date', 'buy_price', "sell_price", 'profit', "period"])
         df["PNL (%)"] = df["profit"] / df["buy_price"] * 100
         print(df.to_string(index=False))
         print("Total profit:", df["profit"].sum())
@@ -73,6 +74,7 @@ class DQNEnvironment:
         self.done = False
         self.profits = [0 for e in range(len(self.data))]
         self.agent_positions = []
+        self.agent_positions_date = []
         self.agent_open_position_value = 0
 
         self.cumulative_return = [0 for e in range(len(self.data))]
@@ -117,6 +119,7 @@ class DQNEnvironment:
         reward = 0
         # GET CURRENT STATE
         state = self.data.iloc[self.t, :]['Close']
+        date = self.data.iloc[self.t, :]['Date']
 
         # EXECUTE THE ACTION (act = 0: stay, 1: buy, 2: sell)
         if act == 0:  # Do Nothing
@@ -124,6 +127,7 @@ class DQNEnvironment:
 
         if act == 1:  # Buy
             self.agent_positions.append(self.data.iloc[self.t, :]['Close'])
+            self.agent_positions_date.append(date)
             reward += 5
 
         sell_nothing = False
@@ -137,6 +141,8 @@ class DQNEnvironment:
             if len(self.agent_positions) > 0:
                 self.history.append(
                     [
+                        self.agent_positions_date[0],
+                        date,
                         self.agent_positions[0],
                         self.data.iloc[self.t, :]['Close'],
                         self.data.iloc[self.t, :]['Close'] - self.agent_positions[0],

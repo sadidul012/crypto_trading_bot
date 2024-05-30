@@ -20,7 +20,7 @@ def print_stats(model, c_return, t):
     t.add_row([str(model), "%.2f" % np.mean(c_return), "%.2f" % np.amax(c_return), "%.2f" % np.amin(c_return), "%.2f" % np.std(c_return)])
 
 
-def load_agent(model_path):
+def load_conv_dqn_agent(model_path):
     model = ConvDQN(settings.INPUT_DIM, settings.ACTION_NUMBER)
 
     if os.path.exists(model_path):
@@ -57,7 +57,7 @@ def main():
     df = load_data('FTMUSDT', replace_column=False)
     train_size = int(df.shape[0] * 0.8)
     model_path = settings.DATA_PATH + settings.MODEL_LOCATION
-    dqn_agent, _ = load_agent(model_path)
+    dqn_agent, _ = load_conv_dqn_agent(model_path)
     profit_dqn_return = []
     print(df.head())
 

@@ -1,7 +1,7 @@
 import os.path
 
 from process import load_data
-from rl.test import load_agent
+from rl.test import load_conv_dqn_agent
 from rl.environments.Environment import DQNEnvironment
 from config import settings
 
@@ -14,7 +14,7 @@ def main():
         os.makedirs(model_path, exist_ok=True)
 
     model_path = settings.DATA_PATH + settings.MODEL_LOCATION
-    dqn_agent, model = load_agent(model_path)
+    dqn_agent, model = load_conv_dqn_agent(model_path)
 
     train_size = int(settings.TRADING_PERIOD * 0.8)
     profit_train_env = DQNEnvironment(df[:train_size], "profit")

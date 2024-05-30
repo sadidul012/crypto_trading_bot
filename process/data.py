@@ -3,7 +3,7 @@ import zipfile
 import glob
 
 
-columns = ["t", "o", "h", "l", "c", "v"]
+columns = ["d", "t", "o", "h", "l", "c", "v"]
 
 
 def load_data(symbol, replace_column=True):
@@ -20,8 +20,9 @@ def load_data(symbol, replace_column=True):
     df = df[[0, 1, 2, 3, 4, 5]]
     old_columns = ["Time", "Open", "High", "Low", "Close", "Volume"]
     df.columns = old_columns
+    df["Date"] = pd.to_datetime(df["Time"], unit="ms")
 
-    df = df[old_columns]
+    df = df[["Date"] + old_columns]
     if replace_column:
         df.columns = columns
     return df

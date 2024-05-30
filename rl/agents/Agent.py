@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -92,6 +93,13 @@ class DQNAgent:
 
     def select_action(self, state):
         """ the epsilon-greedy action selection"""
+        if isinstance(state, pd.DataFrame):
+            state = torch.tensor(
+                [el for el in state['c']],
+                device=self.device,
+                dtype=torch.float
+            )
+
         state = state.unsqueeze(0).unsqueeze(1)
         sample = random.random()
         if self.training:
