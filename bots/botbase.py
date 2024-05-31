@@ -41,6 +41,7 @@ class BotBase(object):
         print("total assets", (self.coin_count * self.last_price) + self.profits)
         print("cumulative loss", self.loss)
         print("loss count", self.loss_count)
+        print("trade count", self.count)
 
     def stop_loss(self, data, base_price, close="stop"):
         self.position = "sell"
