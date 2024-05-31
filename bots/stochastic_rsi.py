@@ -1,6 +1,7 @@
 import pandas as pd
 
 from bots.botbase import BotBase
+from metrics import stochastics, rsi
 
 
 class StochasticRSI(BotBase):
@@ -8,6 +9,10 @@ class StochasticRSI(BotBase):
         BotBase.__init__(self, symbol)
 
     def action(self, data):
+        data = rsi(data, "c", 10)
+        data = stochastics(data, 'l', 'h', 'c', 14, 3)
+        data = data.iloc[-1].to_dict()
+
         if self.position == "buy" and data["c"] > self.highest:
             self.highest = data["c"]
 
@@ -24,3 +29,5 @@ class StochasticRSI(BotBase):
         if self.position == "buy" and self.distance_percent(data, self.price) > 0.3:
             self.take_profit(data, self.price)
             return 0
+
+        self.last_price = data["c"]

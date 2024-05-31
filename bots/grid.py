@@ -17,10 +17,9 @@ class Grid(BotBase):
         self.stop_loss_value = 0.39
         print(self.buy_grids)
         print(self.sell_grids)
-        self.last_price = 0
 
     def summary(self):
-        super().summary()
+        print("total invest", self.invest)
         print("available crypto", self.available_crypto)
         print("available crypto in USDT", self.available_crypto * self.last_price)
         print("available invest", self.available_investment)
@@ -41,6 +40,8 @@ class Grid(BotBase):
     #     self.available_crypto
 
     def action(self, data):
+        data = data.iloc[-1].to_dict()
+
         self.time += 1
         if self.time == 1:
             self.buy_order_amount(data, self.invest_per_grid * len(self.sell_grids))

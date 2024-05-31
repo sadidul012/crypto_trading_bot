@@ -14,6 +14,7 @@ class BotBase(object):
         self.invest = 100
         self.highest = 0
         self.time = 0
+        self.last_price = 0
 
         self.history = []
         self.buy = None
@@ -26,14 +27,18 @@ class BotBase(object):
             "Change", "Value %", "Close Type", "Duration"
         ]
 
-    def summary(self):
+    def save_history(self):
         df = pd.DataFrame(self.history, columns=self.history_columns)
         df["Duration"] = df["Sell Time"] - df["Buy Time"]
         # print(df[self.show_history_columns].to_string(index=False))
         df.to_csv(f"data/output/{self.symbol}.csv", index=False)
 
+    def summary(self):
         print("invest", self.invest)
         print("cumulative profit", self.profits)
+        print("available crypto", self.coin_count)
+        print("available crypto in USDT", self.coin_count * self.last_price)
+        print("total assets", (self.coin_count * self.last_price) + self.profits)
         print("cumulative loss", self.loss)
         print("loss count", self.loss_count)
 

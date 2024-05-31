@@ -1,7 +1,5 @@
-import pandas as pd
 from bots.botbase import BotBase
 from config import settings
-from rl.agents.Agent import DQNAgent
 from rl.test import load_conv_dqn_agent
 
 
@@ -15,11 +13,11 @@ class DQNBot(BotBase):
 
     def action(self, data):
         action = self.actions[self.agent.select_action(data)]
-        print(action)
         # if self.position == "buy" and data["c"] > self.highest:
         #     self.highest = data["c"]
         #
         # data["date"] = pd.to_datetime(data["t"], unit='ms')
+        data = data.iloc[-1].to_dict()
         data["date"] = data["d"]
         if self.position == "sell" and action == "buy":
             self.highest = data["c"]
@@ -33,3 +31,5 @@ class DQNBot(BotBase):
         if self.position == "buy" and action == "sell":
             self.take_profit(data, self.price)
             return 0
+
+        self.last_price = data["c"]
