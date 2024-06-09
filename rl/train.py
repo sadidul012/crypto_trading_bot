@@ -7,7 +7,7 @@ from config import settings
 
 
 def main():
-    df = load_data('FTMUSDT', replace_column=False)
+    df = load_data('ETHUSDT', replace_column=False)
 
     model_path = settings.DATA_PATH + settings.MODEL_FOLDER
     if not os.path.exists(model_path):
@@ -15,6 +15,7 @@ def main():
 
     model_path = settings.DATA_PATH + settings.MODEL_LOCATION
     dqn_agent, model = load_conv_dqn_agent(model_path)
+    # print(model)
 
     train_size = int(settings.TRADING_PERIOD * 0.8)
     profit_train_env = DQNEnvironment(df[:train_size], "profit")

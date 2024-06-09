@@ -88,15 +88,17 @@ class DQNEnvironment:
             Environment.step() it will return the next state.
         """
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if not self.done:
-            return torch.tensor(
-                [el for el in self.data.iloc[self.t - 23:self.t + 1, :]['Close']],
-                device=device,
-                dtype=torch.float
-            )
-        else:
-            return None
+            return self.data.iloc[self.t - 23:self.t + 1, :]
+        return None
+        # if not self.done:
+        #     return torch.tensor(
+        #         [el for el in self.data.iloc[self.t - 23:self.t + 1, :]['Close']],
+        #         device=device,
+        #         dtype=torch.float
+        #     )
+        # else:
+        #     return None
 
     def step(self, act):
         """
@@ -124,18 +126,19 @@ class DQNEnvironment:
 
         # EXECUTE THE ACTION (act = 0: stay, 1: buy, 2: sell)
         if act == 0:  # Do Nothing
-            pass
+            reward += -5
 
         if act == 1:  # Buy
             self.agent_positions.append(self.data.iloc[self.t, :]['Close'])
             self.agent_positions_date.append(date)
-            reward += 5
+            reward += -5
 
         sell_nothing = False
         if act == 2:  # Sell
             profits = 0
             if len(self.agent_positions) < 1:
                 sell_nothing = True
+
             for position in self.agent_positions:
                 profits += (self.data.iloc[self.t, :]['Close'] - position)  # profit = close - my_position for each my_position "p"
 
@@ -153,9 +156,7 @@ class DQNEnvironment:
 
             self.profits[self.t] = profits
             self.agent_positions = []
-            reward += profits * 10
-            # print("profit", profits)
-
+            reward += (profits * 10) - 5
         self.agent_open_position_value = 0
         for position in self.agent_positions:
             self.agent_open_position_value += (self.data.iloc[self.t, :]['Close'] - position)
@@ -163,7 +164,7 @@ class DQNEnvironment:
             self.cumulative_return[self.t] += (position - self.init_price) / self.init_price
 
         if sell_nothing and (reward > -1):
-            reward = -1
+            reward += -1
 
         # UPDATE THE STATE
         self.t += 1

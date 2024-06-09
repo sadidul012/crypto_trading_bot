@@ -106,14 +106,17 @@ class ConvDQN(nn.Module):
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
-    def select_action(self, state, training, steps_done, eps_steps, eps_end, eps_start):
-        if isinstance(state, pd.DataFrame):
-            state = torch.tensor(
-                [el for el in state['c']],
+    def pd_to_torch(self, df):
+        if df is not None:
+            return torch.tensor(
+                [el for el in df['Close']],
                 device=self.device,
                 dtype=torch.float
             )
 
+        return None
+
+    def select_action(self, state, training, steps_done, eps_steps, eps_end, eps_start):
         state = state.unsqueeze(0).unsqueeze(1)
 
         sample = random()

@@ -24,9 +24,9 @@ def print_stats(model, c_return, t):
 def load_conv_dqn_agent(model_path):
     model = Model(settings.INPUT_DIM, settings.ACTION_NUMBER, learning_rate=settings.LEARNING_RATE)
 
-    if os.path.exists(model_path):
-        print("Loading model...")
-        model.load_model(model_path)
+    # if os.path.exists(model_path):
+    #     print("Loading model...")
+    #     model.load_model(model_path)
 
     dqn_agent = DQNAgent(
         model,
@@ -50,7 +50,7 @@ def load_conv_dqn_agent(model_path):
 
 
 def main():
-    df = load_data('FTMUSDT', replace_column=False)
+    df = load_data('ETHUSDT', replace_column=False)
     train_size = int(df.shape[0] * 0.8)
     model_path = settings.DATA_PATH + settings.MODEL_LOCATION
     dqn_agent, _ = load_conv_dqn_agent(model_path)

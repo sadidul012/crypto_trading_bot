@@ -94,7 +94,8 @@ class DQNAgent:
             # Initialize the environment and state
             env.reset()  # reset the env st it is set at the beginning of the time series
             self.steps_done = 0
-            state = env.get_state()
+            state = self.policy_net.pd_to_torch(env.get_state())
+
             for t in range(len(env.data)):  # while not env.done
                 # Select and perform an action
                 action = self.select_action(state)
@@ -104,8 +105,7 @@ class DQNAgent:
 
                 # Observe new state: it will be None if env.done = True. It is the next
                 # state since env.step() has been called two rows above.
-                next_state = env.get_state()
-
+                next_state = self.policy_net.pd_to_torch(env.get_state())
                 # Store the transition in memory
                 self.memory.push(state, action, next_state, reward)
 
@@ -135,7 +135,7 @@ class DQNAgent:
         cumulative_reward = [0 for t in range(len(env_test.data))]
         reward_list = [0 for t in range(len(env_test.data))]
         env_test.reset()  # reset the env st it is set at the beginning of the time serie
-        state = env_test.get_state()
+        state = self.policy_net.pd_to_torch(env_test.get_state())
         for t in tqdm(range(len(env_test.data)), desc="Testing"):  # while not env.done
             # Select and perform an action
             action = self.select_action(state)
@@ -147,7 +147,7 @@ class DQNAgent:
 
             # Observe new state: it will be None if env.done = True. It is the next
             # state since env.step() has been called two rows above.
-            next_state = env_test.get_state()
+            next_state = self.policy_net.pd_to_torch(env_test.get_state())
             # Move to the next state
             state = next_state
 
