@@ -125,6 +125,7 @@ class ConvDQN(nn.Module):
         else:
             eps_threshold = eps_end
 
+
         # [Exploitation] pick the best action according to current Q approx.
         if sample > eps_threshold:
             with torch.no_grad():
