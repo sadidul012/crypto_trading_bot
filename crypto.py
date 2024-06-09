@@ -7,7 +7,7 @@ from process import load_data, columns
 from bots.dqn_bot import DQNBot as TheBot
 
 
-assets_list = ['FTMUSDT', 'ETHUSDT', "TRXUSDT", "XRPUSDT"]
+assets_list = ['ETHUSDT', "TRXUSDT", "XRPUSDT", 'FTMUSDT']
 coins = dict(zip(assets_list, [None] * len(assets_list)))
 
 

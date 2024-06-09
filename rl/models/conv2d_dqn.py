@@ -1,6 +1,5 @@
 from random import random, randrange
 
-import pandas as pd
 import torch
 from torch import nn, optim
 import torch.nn.functional as F
@@ -17,24 +16,25 @@ class ConvDQN(nn.Module):
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
-        )
-        self.network_2 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),
-        )
-        self.network_3 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),
             nn.Flatten(),
         )
+        # self.network_2 = nn.Sequential(
+        #     nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(2, 2),
+        # )
+        # self.network_3 = nn.Sequential(
+        #     nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1),
+        #     nn.ReLU(),
+        #     nn.MaxPool2d(2, 2),
+        #     nn.Flatten(),
+        # )
         self.output = nn.Sequential(
-            nn.Linear(256, 1024),
+            nn.Linear(1536, 1024),
             nn.ReLU(),
             nn.Linear(1024, 512),
             nn.ReLU(),
@@ -46,10 +46,20 @@ class ConvDQN(nn.Module):
         print("Agent is using device:\t" + str(self.device))
         self.to(self.device)
 
+    def pd_to_torch(self, df):
+        if df is not None:
+            return torch.tensor(
+                df[["Open", "High", "Low", "Close", "Volume"]].values,
+                device=self.device,
+                dtype=torch.float
+            )
+
+        return None
+
     def forward(self, x):
         x = self.network_1(x)
-        x = self.network_2(x)
-        x = self.network_3(x)
+        # x = self.network_2(x)
+        # x = self.network_3(x)
         return self.output(x)
 
     def load_model(self, path):
@@ -62,25 +72,21 @@ class ConvDQN(nn.Module):
         # Compute a mask of non-final states and concatenate the batch elements
         # (a final state would've been the one after which simulation ended)
         #
-        # non_final_mask is a column vector telling wich state of the sampled is final
+        # non_final_mask is a column vector telling which state of the sampled is final
         # non_final_next_states contains all the non-final states sampled
         non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), device=self.device, dtype=torch.bool)
-        nfns = [s for s in batch.next_state if s is not None]
-        non_final_next_states = torch.cat(nfns).view(len(nfns), -1)
+        non_final_next_states = torch.tensor([b.tolist() for b in batch.next_state if b is not None], device=self.device, dtype=torch.float)
         non_final_next_states = non_final_next_states.unsqueeze(1)
 
-        state_batch = torch.cat(batch.state).view(batch_size, -1)
-        print(state_batch.shape)
-        state_batch = state_batch.unsqueeze(1).unsqueeze(0)
-        print(state_batch.shape)
-        action_batch = torch.cat(batch.action).view(batch_size, -1).unsqueeze(0)
-        reward_batch = torch.cat(batch.reward).view(batch_size, -1).unsqueeze(0)
-        print(action_batch.shape, reward_batch.shape)
+        state_batch = torch.tensor([b.tolist() for b in batch.state], device=self.device, dtype=torch.float).unsqueeze(1)
+        action_batch = torch.cat(batch.action).view(batch_size, -1)
+        reward_batch = torch.cat(batch.reward).view(batch_size, -1)
 
         # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
         # columns of actions taken. These are the actions which would've been taken
         # for each batch state according to policy_net
-        state_action_values = self.forward(state_batch).gather(1, action_batch)
+        state_action_values = self.forward(state_batch)
+        state_action_values = state_action_values.gather(1, action_batch)
 
         next_state_action = None
         if double:
@@ -127,15 +133,7 @@ class ConvDQN(nn.Module):
         self.optimizer.step()
 
     def select_action(self, state, training, steps_done, eps_steps, eps_end, eps_start):
-        if isinstance(state, pd.DataFrame):
-            state = torch.tensor(
-                [el for el in state['c']],
-                device=self.device,
-                dtype=torch.float
-            )
-
         state = state.unsqueeze(0).unsqueeze(1)
-
         sample = random()
         if training:
             if steps_done > eps_steps:

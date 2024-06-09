@@ -63,7 +63,8 @@ class DQNEnvironment:
         print("Total loss:", df.shape[0] - total_win)
         print("Max win:", df["profit"].max())
         print("Max loss:", df["profit"].min())
-        print("STD:", df["profit"].median())
+        print("STD:", df["profit"].std())
+        print("Median:", df["profit"].median())
 
     def reset(self):
         """
@@ -91,14 +92,6 @@ class DQNEnvironment:
         if not self.done:
             return self.data.iloc[self.t - 23:self.t + 1, :]
         return None
-        # if not self.done:
-        #     return torch.tensor(
-        #         [el for el in self.data.iloc[self.t - 23:self.t + 1, :]['Close']],
-        #         device=device,
-        #         dtype=torch.float
-        #     )
-        # else:
-        #     return None
 
     def step(self, act):
         """
@@ -126,12 +119,12 @@ class DQNEnvironment:
 
         # EXECUTE THE ACTION (act = 0: stay, 1: buy, 2: sell)
         if act == 0:  # Do Nothing
-            reward += -5
+            reward += -1
 
         if act == 1:  # Buy
             self.agent_positions.append(self.data.iloc[self.t, :]['Close'])
             self.agent_positions_date.append(date)
-            reward += -5
+            reward += 5
 
         sell_nothing = False
         if act == 2:  # Sell
@@ -156,7 +149,7 @@ class DQNEnvironment:
 
             self.profits[self.t] = profits
             self.agent_positions = []
-            reward += (profits * 10) - 5
+            reward += (profits * 10) - 10
         self.agent_open_position_value = 0
         for position in self.agent_positions:
             self.agent_open_position_value += (self.data.iloc[self.t, :]['Close'] - position)
@@ -164,7 +157,7 @@ class DQNEnvironment:
             self.cumulative_return[self.t] += (position - self.init_price) / self.init_price
 
         if sell_nothing and (reward > -1):
-            reward += -1
+            reward = -1
 
         # UPDATE THE STATE
         self.t += 1

@@ -106,6 +106,7 @@ class DQNAgent:
                 # Observe new state: it will be None if env.done = True. It is the next
                 # state since env.step() has been called two rows above.
                 next_state = self.policy_net.pd_to_torch(env.get_state())
+
                 # Store the transition in memory
                 self.memory.push(state, action, next_state, reward)
 

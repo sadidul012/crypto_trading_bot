@@ -12,7 +12,9 @@ class DQNBot(BotBase):
         self.actions = ["", "buy", "sell"]
 
     def action(self, data):
-        action = self.actions[self.agent.select_action(data)]
+        data_copy = data.copy()
+        data_copy.columns = ['Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume']
+        action = self.actions[self.agent.select_action(self.agent.policy_net.pd_to_torch(data_copy))]
         # if self.position == "buy" and data["c"] > self.highest:
         #     self.highest = data["c"]
         #

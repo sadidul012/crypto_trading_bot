@@ -4,8 +4,8 @@ import numpy as np
 from prettytable import PrettyTable as PrettyTable
 
 from config import settings
-from rl.models.conv_dqn import ConvDQN as Model
-# from rl.models.conv2d_dqn import ConvDQN as Model
+# from rl.models.conv_dqn import ConvDQN as Model
+from rl.models.conv2d_dqn import ConvDQN as Model
 import random
 import warnings
 from rl.environments.Environment import DQNEnvironment
@@ -24,9 +24,9 @@ def print_stats(model, c_return, t):
 def load_conv_dqn_agent(model_path):
     model = Model(settings.INPUT_DIM, settings.ACTION_NUMBER, learning_rate=settings.LEARNING_RATE)
 
-    # if os.path.exists(model_path):
-    #     print("Loading model...")
-    #     model.load_model(model_path)
+    if os.path.exists(model_path):
+        print("Loading model...")
+        model.load_model(model_path)
 
     dqn_agent = DQNAgent(
         model,

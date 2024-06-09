@@ -1,3 +1,5 @@
+import os.path
+
 import pandas as pd
 
 
@@ -31,6 +33,9 @@ class BotBase(object):
         df = pd.DataFrame(self.history, columns=self.history_columns)
         df["Duration"] = df["Sell Time"] - df["Buy Time"]
         # print(df[self.show_history_columns].to_string(index=False))
+        if not os.path.exists("data/output"):
+            os.makedirs("data/output", exist_ok=True)
+
         df.to_csv(f"data/output/{self.symbol}.csv", index=False)
 
     def summary(self):
