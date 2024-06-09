@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     N_TEST: int
     TRADING_PERIOD: int
     DOUBLE: bool
+    NUMBER_EPOCHS: int
 
     class Config:
         # env_file = '/.env'

@@ -19,7 +19,7 @@ def main():
     train_size = int(settings.TRADING_PERIOD * 0.8)
     profit_train_env = DQNEnvironment(df[:train_size], "profit")
 
-    model, cr_profit_dqn = dqn_agent.train(profit_train_env, num_episodes=40)
+    model, cr_profit_dqn = dqn_agent.train(profit_train_env, num_episodes=settings.NUMBER_EPOCHS)
     model.save_model(model_path)
     profit_train_env.reset()
 

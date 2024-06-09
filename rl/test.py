@@ -4,7 +4,8 @@ import numpy as np
 from prettytable import PrettyTable as PrettyTable
 
 from config import settings
-from rl.models.conv_dqn import ConvDQN
+from rl.models.conv_dqn import ConvDQN as Model
+# from rl.models.conv2d_dqn import ConvDQN as Model
 import random
 import warnings
 from rl.environments.Environment import DQNEnvironment
@@ -21,7 +22,7 @@ def print_stats(model, c_return, t):
 
 
 def load_conv_dqn_agent(model_path):
-    model = ConvDQN(settings.INPUT_DIM, settings.ACTION_NUMBER)
+    model = Model(settings.INPUT_DIM, settings.ACTION_NUMBER, learning_rate=settings.LEARNING_RATE)
 
     if os.path.exists(model_path):
         print("Loading model...")
@@ -30,21 +31,16 @@ def load_conv_dqn_agent(model_path):
     dqn_agent = DQNAgent(
         model,
         model,
-        settings.MODEL_NAME,
         settings.REPLAY_MEM_SIZE,
         settings.BATCH_SIZE,
         settings.GAMMA,
         settings.EPS_START,
         settings.EPS_END,
         settings.EPS_STEPS,
-        settings.LEARNING_RATE,
-        settings.INPUT_DIM,
-        settings.HIDDEN_DIM,
-        settings.ACTION_NUMBER,
         settings.TARGET_UPDATE,
         double=settings.DOUBLE
     )
-    if str(dqn_agent.device) == "cpu":
+    if str(model.device) == "cpu":
         warnings.warn(
             "Device is set to CPU. This will lead to a very slow training. Consider to run pretained rl by"
             "executing main.py script instead of train_test.py!"
@@ -74,6 +70,7 @@ def main():
         i += 1
 
     t = PrettyTable(["Trading System", "Avg. Return (%)", "Max Return (%)", "Min Return (%)", "Std. Dev."])
+    print()
     print_stats("ProfitDQN", profit_dqn_return, t)
     print(t)
 

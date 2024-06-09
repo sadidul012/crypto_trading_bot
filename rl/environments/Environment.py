@@ -55,6 +55,7 @@ class DQNEnvironment:
         df = pd.DataFrame(self.history, columns=['buy_date', 'sell_date', 'buy_price', "sell_price", 'profit', "period"])
         df["PNL (%)"] = df["profit"] / df["buy_price"] * 100
         print(df.to_string(index=False))
+        print()
         print("Total profit:", df["profit"].sum())
         total_win = (df["profit"] > 0).sum()
         print("Total trades", df.shape[0])
