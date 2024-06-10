@@ -38,7 +38,8 @@ class ConvDQN(nn.Module):
             nn.ReLU(),
             nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Linear(512, actions_n)
+            nn.Linear(512, actions_n),
+            nn.Softmax(dim=1)
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
@@ -149,8 +150,10 @@ class ConvDQN(nn.Module):
                 # Return the number of the action with highest non normalized probability
                 # TODO: decide if diverge from paper and normalize probabilities with
                 # softmax or at least compare the architectures
-                return torch.tensor([self.forward(state).argmax()], device=self.device, dtype=torch.long)
+                output = self.forward(state)
+                label = output.argmax()
+                return torch.tensor([label], device=self.device, dtype=torch.long), output[0]
 
         # [Exploration]  pick a random action from the action space
         else:
-            return torch.tensor([randrange(self.action_number)], device=self.device, dtype=torch.long)
+            return torch.tensor([randrange(self.action_number)], device=self.device, dtype=torch.long), [1, 1, 1]

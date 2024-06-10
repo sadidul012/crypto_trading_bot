@@ -14,16 +14,24 @@ class DQNBot(BotBase):
     def action(self, data):
         data_copy = data.copy()
         data_copy.columns = ['Date', 'Time', 'Open', 'High', 'Low', 'Close', 'Volume']
-        action = self.actions[self.agent.select_action(self.agent.policy_net.pd_to_torch(data_copy))]
-        # if self.position == "buy" and data["c"] > self.highest:
-        #     self.highest = data["c"]
-        #
-        # data["date"] = pd.to_datetime(data["t"], unit='ms')
+        action, confidence = self.agent.select_action(self.agent.policy_net.pd_to_torch(data_copy))
+        action = self.actions[action]
+
         data = data.iloc[-1].to_dict()
         data["date"] = data["d"]
+        self.last_price = data["c"]
+
         if self.position == "sell" and action == "buy":
             self.highest = data["c"]
             self.order(data)
+            return 0
+
+        if self.price > 0 and ((self.last_price - self.price) / self.price) < -0.2:
+            self.stop_loss(data, self.price, close="stop_loss")
+            return 0
+
+        if self.price > 0 and ((self.last_price - self.price) / self.price) > 0.4:
+            self.take_profit(data, self.price, close="take_profit_force")
             return 0
 
         if self.position == "buy" and action == "sell":
@@ -34,4 +42,3 @@ class DQNBot(BotBase):
             self.take_profit(data, self.price)
             return 0
 
-        self.last_price = data["c"]

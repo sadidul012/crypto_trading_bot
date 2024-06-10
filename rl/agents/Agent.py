@@ -63,9 +63,9 @@ class DQNAgent:
     def select_action(self, state):
         """ the epsilon-greedy action selection"""
 
-        action = self.policy_net.select_action(state, self.training, self.steps_done, self.eps_steps, self.eps_end, self.eps_start)
+        action, confidence = self.policy_net.select_action(state, self.training, self.steps_done, self.eps_steps, self.eps_end, self.eps_start)
         self.steps_done += 1
-        return action
+        return action, confidence
 
     def optimize_model(self):
         if len(self.memory) < self.batch_size:
@@ -98,7 +98,7 @@ class DQNAgent:
 
             for t in range(len(env.data)):  # while not env.done
                 # Select and perform an action
-                action = self.select_action(state)
+                action, _ = self.select_action(state)
                 reward, done, _ = env.step(action)
 
                 cumulative_reward[i_episode] += reward.item()

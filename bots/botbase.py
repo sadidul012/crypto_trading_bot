@@ -37,6 +37,7 @@ class BotBase(object):
             os.makedirs("data/output", exist_ok=True)
 
         df.to_csv(f"data/output/{self.symbol}.csv", index=False)
+        print(df[["Buy Price", "Sell Price", "PNL", "Change", "Value %", "Duration"]].describe().to_string())
 
     def summary(self):
         print("invest", self.invest)

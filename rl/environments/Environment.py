@@ -149,7 +149,8 @@ class DQNEnvironment:
 
             self.profits[self.t] = profits
             self.agent_positions = []
-            reward += (profits * 10) - 10
+            reward += (profits * 10) - 3
+
         self.agent_open_position_value = 0
         for position in self.agent_positions:
             self.agent_open_position_value += (self.data.iloc[self.t, :]['Close'] - position)
