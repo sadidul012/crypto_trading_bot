@@ -8,7 +8,7 @@ from rl.environments.Environment import DQNEnvironment
 from config import settings
 
 
-def load_conv_dqn_agent(model_path):
+def load_conv_dqn_agent(model_path, eps_steps=None):
     model = Model(settings.INPUT_DIM, settings.ACTION_NUMBER, learning_rate=settings.LEARNING_RATE)
 
     if os.path.exists(model_path):
@@ -23,7 +23,7 @@ def load_conv_dqn_agent(model_path):
         settings.GAMMA,
         settings.EPS_START,
         settings.EPS_END,
-        settings.EPS_STEPS,
+        eps_steps if eps_steps is not None else settings.EPS_STEPS,
         settings.TARGET_UPDATE,
         double=settings.DOUBLE
     )

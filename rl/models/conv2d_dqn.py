@@ -152,8 +152,9 @@ class ConvDQN(nn.Module):
                 # softmax or at least compare the architectures
                 output = self.forward(state)
                 label = output.argmax()
-                return torch.tensor([label], device=self.device, dtype=torch.long), output[0]
-
+                # print(output)
+                return torch.tensor([label], device=self.device, dtype=torch.long), output[0][label]
         # [Exploration]  pick a random action from the action space
         else:
-            return torch.tensor([randrange(self.action_number)], device=self.device, dtype=torch.long), [1, 1, 1]
+            # print("random")
+            return torch.tensor([randrange(self.action_number)], device=self.device, dtype=torch.long), 1

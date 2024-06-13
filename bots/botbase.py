@@ -39,11 +39,17 @@ class BotBase(object):
         df.to_csv(f"data/output/{self.symbol}.csv", index=False)
         print(df[["Buy Price", "Sell Price", "PNL", "Change", "Value %", "Duration"]].describe().to_string())
 
+    def current_asset_value(self):
+        return self.coin_count * self.last_price
+
+    def loss_percent(self):
+        return (self.current_asset_value() - self.invest) / self.invest
+
     def summary(self):
         print("invest", self.invest)
         print("cumulative profit", self.profits)
         print("available crypto", self.coin_count)
-        print("available crypto in USDT", self.coin_count * self.last_price)
+        print("available crypto in USDT", self.current_asset_value())
         print("total assets", (self.coin_count * self.last_price) + self.profits)
         print("cumulative loss", self.loss)
         print("loss count", self.loss_count)
