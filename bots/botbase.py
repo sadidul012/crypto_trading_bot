@@ -1,6 +1,7 @@
 import os.path
 
 import pandas as pd
+# import mplfinance as mpf
 
 
 class BotBase(object):
@@ -89,3 +90,8 @@ class BotBase(object):
 
     def action(self, data):
         return 0
+
+    def render(self):
+        pass
+    # def render(self):
+    #     mpf.plot(self.df, type='candle', style='yahoo', volume=True)

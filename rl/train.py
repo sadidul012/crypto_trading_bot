@@ -2,7 +2,7 @@ import os.path
 # from rl.models.conv_dqn import ConvDQN as Model
 from rl.models.conv2d_dqn import ConvDQN as Model
 import warnings
-from rl.agents.Agent import DQNAgent
+from rl.agents.DQNAgent import DQNAgent
 from process import load_data
 from rl.environments.Environment import DQNEnvironment
 from config import settings

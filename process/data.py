@@ -6,7 +6,7 @@ import glob
 columns = ["d", "t", "o", "h", "l", "c", "v"]
 
 
-def load_data(symbol, replace_column=True):
+def load_data(symbol, replace_column=True, daily=False):
     list_ = []
     for file in glob.glob(f"/mnt/Cache/crypto/{symbol}/*.zip"):
         zf = zipfile.ZipFile(file)
@@ -25,4 +25,16 @@ def load_data(symbol, replace_column=True):
     df = df[["Date"] + old_columns]
     if replace_column:
         df.columns = columns
+
+    if daily:
+        df["date"] = df.d.apply(lambda x: pd.to_datetime(x).strftime('%Y/%m/%d'))
+        df = df.groupby("date").agg({
+            "d": "first",
+            "t": "first",
+            "o": "first",
+            "h": "max",
+            "l": "min",
+            "c": "last",
+            "v": "sum",
+        })[columns]
     return df

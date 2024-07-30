@@ -3,8 +3,9 @@ import tqdm
 from process import load_data, columns
 
 # from bots.stochastic_rsi import StochasticRSI as TheBot
+from bots.rsi import RSIBot as TheBot
 # from bots.grid import Grid as TheBot
-from bots.dqn_bot import DQNBot as TheBot
+# from bots.dqn_bot import DQNBot as TheBot
 
 
 assets_list = ['ETHUSDT', "TRXUSDT", "XRPUSDT", 'FTMUSDT']
@@ -20,12 +21,13 @@ def manipulation(trader, source):
 
     if df.shape[0] >= 23:
         trader.action(df)
+        trader.render()
 
 
 def main():
     for symbol in assets_list:
         trader = TheBot(symbol)
-        df = load_data(symbol)
+        df = load_data(symbol, daily=True)
         progress = tqdm.tqdm(total=df.shape[0], position=0, leave=True, desc=symbol)
         for i, row in df.iterrows():
             manipulation(trader, list(row.values))
